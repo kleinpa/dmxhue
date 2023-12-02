@@ -52,5 +52,5 @@ cc_binary(
     srcs = [
         "doc/examples/size.cpp",
     ],
-    deps = ["@com_github_nlohmann_json//:json"],
+    deps = ["@nlohmann_json//:json"],
 )

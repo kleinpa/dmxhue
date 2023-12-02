@@ -1,0 +1,36 @@
+module(name = "dmxhue", version = "0.0.0")
+
+bazel_dep(name = "rules_oci", version = "1.4.0")
+bazel_dep(name = "rules_cc", version = "0.0.9")
+bazel_dep(name = "rules_pkg", version = "0.9.1")
+
+# C++ dependencies
+bazel_dep(name = "protobuf", version = "21.7")
+bazel_dep(name = "abseil-cpp", version = "20230802.0")
+bazel_dep(name = "googletest", version = "1.14.0", repo_name = "com_google_googletest")
+bazel_dep(name = "nlohmann_json", version = "3.11.2")
+
+bazel_dep(name = "glog", version = "0.6.0")
+bazel_dep(name = "gflags", version = "2.2.2")
+
+oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
+oci.pull(
+    name = "distroless",
+    digest = "sha256:396891e37c26c8ea032aef368c806f64c950d19cc578fdab2b0093710a036895",
+    image = "gcr.io/distroless/cc",
+    platforms = ["linux/amd64"],
+)
+use_repo(oci, "distroless")
+
+repos = use_extension("//:repos.bzl", "repos_bzlmod")
+use_repo(
+    repos,
+    "etcpal",
+    "sacn",
+    "hueplusplus",
+    "mbedtls",
+    "util_linux",
+    "gflag",
+)
+
+#bazel_dep(name = "prometheus_cpp", version = "1.1.0")

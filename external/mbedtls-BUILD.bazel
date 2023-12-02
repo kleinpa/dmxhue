@@ -233,11 +233,11 @@ cc_library(
     ],
     includes = ["library"],
     strip_include_prefix = "include",
-    copts = ["-Wno-return-type", "-Wno-unused-but-set-parameter"],
+    # copts = ["-Wno-return-type", "-Wno-unused-but-set-parameter"], # not on windows
 )
 
 cc_binary(
     name = "dh_genprime",
     srcs = ["programs/pkey/dh_genprime.c"],
-    deps = ["@com_github_armmbed_mbedtls//:mbedtls"],
+    deps = ["@mbedtls//:mbedtls"],
 )
