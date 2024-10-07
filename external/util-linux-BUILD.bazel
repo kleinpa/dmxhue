@@ -2,7 +2,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 
 cc_library(
     name = "utillinux",
-    strip_include_prefix = "include",
+    #strip_include_prefix = "include",
     hdrs = [
         "include/all-io.h",
         "include/bitops.h",
@@ -129,6 +129,7 @@ cc_library(
         "-DHAVE_GETDTABLESIZE",
         "-DHAVE_SYS_SYSMACROS_H",
     ],
+    includes = ["include"],
     linkopts = ["-lutil"],
     defines = ["HAVE_USLEEP"],
 )

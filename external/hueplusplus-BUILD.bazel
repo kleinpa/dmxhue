@@ -83,8 +83,8 @@ cc_library(
         "test/TestTransaction.h",
     ],
     deps = [
-        "@com_github_armmbed_mbedtls//:mbedtls",
-        "@com_github_nlohmann_json//:json",
+        "@mbedtls//:mbedtls",
+        "@nlohmann_json//:json",
     ],
     copts = ["-Wno-unused-variable"],
 )
