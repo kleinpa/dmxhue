@@ -83,8 +83,8 @@ cc_library(
         "test/TestTransaction.h",
     ],
     deps = [
-        "@com_github_armmbed_mbedtls//:mbedtls",
-        "@com_github_nlohmann_json//:json",
+        "@mbedtls//:mbedtls",
+        "@nlohmann_json//:json",
     ],
     copts = ["-Wno-unused-variable"],
 )
@@ -122,7 +122,7 @@ cc_test(
         "test/test_UPnP.cpp",
     ],
     deps = [
-        "@com_github_enwi_hueplusplus//:hueplusplus",
+        "@hueplusplus//:hueplusplus",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -132,7 +132,7 @@ cc_binary(
     srcs = [
         "examples/UsernameConfig.cpp",
     ],
-    deps = ["@com_github_enwi_hueplusplus//:hueplusplus"],
+    deps = ["@hueplusplus//:hueplusplus"],
 )
 
 cc_binary(
@@ -140,7 +140,7 @@ cc_binary(
     srcs = [
         "examples/BridgeSetup.cpp",
     ],
-    deps = ["@com_github_enwi_hueplusplus//:hueplusplus"],
+    deps = ["@hueplusplus//:hueplusplus"],
 )
 
 cc_binary(
@@ -148,7 +148,7 @@ cc_binary(
     srcs = [
         "examples/LightsOff.cpp",
     ],
-    deps = ["@com_github_enwi_hueplusplus//:hueplusplus"],
+    deps = ["@hueplusplus//:hueplusplus"],
 )
 
 cc_binary(
@@ -156,5 +156,5 @@ cc_binary(
     srcs = [
         "examples/Snippets.cpp",
     ],
-    deps = ["@com_github_enwi_hueplusplus//:hueplusplus"],
+    deps = ["@hueplusplus//:hueplusplus"],
 )

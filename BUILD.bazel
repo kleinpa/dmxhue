@@ -1,20 +1,57 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
-load("@io_bazel_rules_docker//cc:image.bzl", "cc_image")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load", "oci_push")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 cc_binary(
     name = "dmxhue",
     srcs = ["dmxhue.cc"],
     deps = [
-        "@com_github_enwi_hueplusplus//:hueplusplus",
-        "@com_github_etclabs_sacn//:sacn_cpp",
-        "@com_github_google_glog//:glog",
-        "@com_github_jupp0r_prometheus_cpp//pull",
-        "@com_google_absl//absl/flags:flag",
-        "@com_google_absl//absl/flags:parse",
+        "@abseil-cpp//absl/flags:flag",
+        "@abseil-cpp//absl/flags:parse",
+        "@abseil-cpp//absl/log:check",
+        "@abseil-cpp//absl/log:log",
+        "@etclabs_sacn//:sacn_cpp",
+        "@hueplusplus",
+        "@prometheus-cpp//pull",
     ],
 )
 
-cc_image(
-    name = "dmxhue_image",
-    binary = ":dmxhue",
+pkg_tar(
+    name = "layer",
+    srcs = [
+        ":dmxhue",
+    ],
+    package_dir = "/",
+)
+
+oci_image(
+    name = "image",
+    base = "@distroless_cc_debian12",
+    target_compatible_with = ["@platforms//os:linux"],
+    tars = [
+        ":layer",
+    ],
+)
+
+oci_load(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["nut-exporter:bazel"],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+oci_push(
+    name = "image_push",
+    image = ":image",
+    remote_tags = ["latest"],
+    repository = "ghcr.io/kleinpa/dmxhue",
+)
+
+build_test(
+    name = "build_test",
+    targets = [
+        ":dmxhue",
+        ":image",
+    ],
 )

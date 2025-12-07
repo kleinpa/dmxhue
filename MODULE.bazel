@@ -1,0 +1,50 @@
+module(name = "dmxhue")
+
+bazel_dep(name = "abseil-cpp", version = "20250814.1")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "gflags", version = "2.2.2.bcr.1")
+bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
+bazel_dep(name = "libuuid", version = "2.41.2")
+bazel_dep(name = "mbedtls", version = "3.6.0")
+bazel_dep(name = "nlohmann_json", version = "3.12.0.bcr.1")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "prometheus-cpp", version = "1.3.0.bcr.2")
+bazel_dep(name = "protobuf", version = "33.1")
+bazel_dep(name = "rules_cc", version = "0.2.14")
+bazel_dep(name = "rules_oci", version = "2.2.7")
+bazel_dep(name = "rules_pkg", version = "1.1.0")
+
+oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
+oci.pull(
+    name = "distroless_cc_debian12",
+    digest = "sha256:1850aee2ff72864350058d83d681c757d45c885986d15fcca7309b9e5c69f39a",
+    image = "gcr.io/distroless/cc-debian12",
+    platforms = [
+        "linux/amd64",
+    ],
+)
+use_repo(oci, "distroless_cc_debian12", "distroless_cc_debian12_linux_amd64")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    build_file = "@//thirdparty:etcpal-BUILD.bazel",
+    name = "etclabs_etcpal",
+    sha256 = "e94d0f492a142ee998acf64e84c1cd17cefb962c0ac389a8083232ad13f2c77b",
+    strip_prefix = "EtcPal-eb5f906aafdbc6a4cd3e00670bbd2824e34705cd",
+    urls = ["https://github.com/ETCLabs/etcpal/archive/eb5f906aafdbc6a4cd3e00670bbd2824e34705cd.zip"],
+)
+http_archive(
+    build_file = "@//thirdparty:sacn-BUILD.bazel",
+    name = "etclabs_sacn",
+    sha256 = "baee0ec371bd435f85e5717f8a6762270202872e77ffc788b5692c3110d53196",
+    strip_prefix = "sACN-af246e04106f2342937566097322ac1ebb86fae0",
+    urls = ["https://github.com/ETCLabs/sACN/archive/af246e04106f2342937566097322ac1ebb86fae0.zip"],
+)
+http_archive(
+    build_file = "@//thirdparty:hueplusplus-BUILD.bazel",
+    name = "hueplusplus",
+    patch_cmds = ["find . -type f -exec sed -i 's/json\\/json\\.hpp/nlohmann\\/json\\.hpp/g' {} \\;"],
+    integrity = "sha256-JfhqaLW0dGRreCgT3IfcQtiJMK+0DCE89k8+pax83m4=",
+    strip_prefix = "hueplusplus-901a96b7994dbe6e78c277770a4eaf357d5968a1",  # 1.2.0
+    urls = ["https://github.com/kleinpa/hueplusplus/archive/901a96b7994dbe6e78c277770a4eaf357d5968a1.zip"],
+)

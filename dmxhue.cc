@@ -1,4 +1,4 @@
-#include <glog/logging.h>
+
 #include <hueplusplus/Bridge.h>
 #include <hueplusplus/EntertainmentMode.h>
 #include <hueplusplus/LinHttpHandler.h>
@@ -20,6 +20,8 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/marshalling.h"
 #include "absl/flags/parse.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "etcpal/cpp/inet.h"
 #include "hueplusplus/Bridge.h"
 #include "hueplusplus/EntertainmentMode.h"
@@ -30,7 +32,6 @@
 #include "sacn/common.h"
 #include "sacn/cpp/common.h"
 #include "sacn/cpp/merge_receiver.h"
-
 /**
  * dmxhue is a service that listens to UDP sACN data and sends it to
  * use Philips Hue API using Entertainment Mode. Entertainment Mode
@@ -83,9 +84,9 @@ class EntertainmentGroupManager {
  public:
   static EntertainmentGroupManager Make(
       std::shared_ptr<hueplusplus::Bridge> bridge,
-      const std::vector<int> &light_ids) {
+      const std::vector<int>& light_ids) {
     // Delete previously created groups with our name
-    for (auto &group : bridge->groups().getAll()) {
+    for (auto& group : bridge->groups().getAll()) {
       if (group.getName() == kGroupName) {
         LOG(INFO) << "removing group " << group.getId() << "/"
                   << group.getType() << ": " << group.getName();
@@ -95,9 +96,8 @@ class EntertainmentGroupManager {
 
     LOG(INFO) << "creating group " << kGroupName << " with " << light_ids.size()
               << " lights";
-    const int group_id =
-        bridge->groups().create(hueplusplus::CreateGroup::Entertainment(
-            light_ids, kGroupName, "Other"));
+    const int group_id = bridge->groups().create(
+        hueplusplus::CreateGroup::Entertainment(light_ids, kGroupName));
 
     if (group_id == 0) {
       throw std::runtime_error("unable to create entertainment group");
@@ -106,7 +106,7 @@ class EntertainmentGroupManager {
     std::map<int, int> light_index;
     hueplusplus::Group group = bridge->groups().get(group_id);
     int i = 0;
-    for (const auto &light_id : group.getLightIds()) {
+    for (const auto& light_id : group.getLightIds()) {
       light_index.insert({light_id, i++});
     }
 
@@ -139,7 +139,7 @@ class EntertainmentGroupManager {
 
   std::vector<int> lightIDs() {
     std::vector<int> x;
-    for (const auto &[k, v] : light_index_) {
+    for (const auto& [k, v] : light_index_) {
       x.push_back(k);
     }
     return x;
@@ -169,26 +169,26 @@ class EntertainmentGroupManager {
 // DMX values are available.
 class CallbackNotifyHandler : public sacn::MergeReceiver::NotifyHandler {
  public:
-  using CallbackFn = std::function<void(const SacnRecvMergedData &)>;
+  using CallbackFn = std::function<void(const SacnRecvMergedData&)>;
   using Handle = sacn::MergeReceiver::Handle;
 
   CallbackNotifyHandler(CallbackFn cb) : cb_(cb) {}
 
   void HandleMergedData(Handle handle,
-                        const SacnRecvMergedData &merged_data) override {
+                        const SacnRecvMergedData& merged_data) override {
     ++data_count_;
     if (cb_) {
       cb_(merged_data);
     }
   }
   void HandleNonDmxData(Handle receiver_handle,
-                        const etcpal::SockAddr &source_addr,
-                        const SacnRemoteSource &source_info,
-                        const SacnRecvUniverseData &universe_data) override {
+                        const etcpal::SockAddr& source_addr,
+                        const SacnRemoteSource& source_info,
+                        const SacnRecvUniverseData& universe_data) override {
     ++non_dmx_data_count_;
   };
 
-  void HandleSourceLimitExceeded(Handle handle, uint16_t universe) override{};
+  void HandleSourceLimitExceeded(Handle handle, uint16_t universe) override {};
 
  private:
   int data_count_ = 0;
@@ -197,7 +197,7 @@ class CallbackNotifyHandler : public sacn::MergeReceiver::NotifyHandler {
 };
 
 void updateLightFromDmx(DmxMapping mapping,
-                        std::array<uint8_t, DMX_ADDRESS_COUNT> &dmx_data) {
+                        std::array<uint8_t, DMX_ADDRESS_COUNT>& dmx_data) {
   uint8_t transition = 0;
   const uint8_t mode = dmx_data[mapping.ch0];
 
@@ -258,19 +258,17 @@ void updateLightFromDmx(DmxMapping mapping,
   }
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   absl::ParseCommandLine(argc, argv);
-  google::InitGoogleLogging(argv[0]);
-  google::InstallFailureSignalHandler();
 
   // Configure metrics
   prometheus::Exposer exposer{"0.0.0.0:5569"};
   auto registry = std::make_shared<prometheus::Registry>();
-  auto &sacn_dmx_data_packet_family = prometheus::BuildCounter()
+  auto& sacn_dmx_data_packet_family = prometheus::BuildCounter()
                                           .Name("sacn_dmx_data_packet")
                                           .Help("Number of observed packets")
                                           .Register(*registry);
-  auto &sacn_dmx_data_packet_counter = sacn_dmx_data_packet_family.Add({});
+  auto& sacn_dmx_data_packet_counter = sacn_dmx_data_packet_family.Add({});
   exposer.RegisterCollectable(registry);
 
   auto handler = std::make_shared<hueplusplus::LinHttpHandler>();
@@ -289,7 +287,7 @@ int main(int argc, char *argv[]) {
   auto allocator = SequentialAllocator(absl::GetFlag(FLAGS_dmx_address_start),
                                        absl::GetFlag(FLAGS_dmx_address_end));
   std::vector<DmxMapping> mappings;
-  for (const auto &light : lights) {
+  for (const auto& light : lights) {
     if (light.hasColorControl()) {
       mappings.push_back({light, (uint8_t)allocator.next(),
                           (uint8_t)allocator.next(), (uint8_t)allocator.next(),
@@ -317,7 +315,7 @@ int main(int argc, char *argv[]) {
   // Prepare sACN callback
   CallbackNotifyHandler sacn_handler([&sacn_dmx_data_packet_counter, &dmx_data,
                                       &dmx_data_mutex, &mappings,
-                                      &egm](const SacnRecvMergedData &data) {
+                                      &egm](const SacnRecvMergedData& data) {
     sacn_dmx_data_packet_counter.Increment();
 
     {
@@ -330,7 +328,7 @@ int main(int argc, char *argv[]) {
     if (!egm) return;
 
     for (const int light_id : egm->lightIDs()) {
-      for (const auto &mapping : mappings) {
+      for (const auto& mapping : mappings) {
         if (mapping.light.getId() == light_id) {
           uint8_t r = dmx_data[mapping.ch1];
           uint8_t g = dmx_data[mapping.ch2];
@@ -358,7 +356,7 @@ int main(int argc, char *argv[]) {
     std::this_thread::sleep_until(next += frame_time);
 
     std::vector<int> em_lights;
-    for (const auto &mapping : mappings) {
+    for (const auto& mapping : mappings) {
       if (mapping.light.hasColorControl() &&
           dmx_data[mapping.ch0] == kControlModeEntertainment) {
         em_lights.push_back(mapping.light.getId());
@@ -366,10 +364,10 @@ int main(int argc, char *argv[]) {
 
       try {
         updateLightFromDmx(mapping, dmx_data);
-      } catch (hueplusplus::HueAPIResponseException e) {
+      } catch (const hueplusplus::HueAPIResponseException& e) {
         LOG(ERROR) << "hue api error updating: " << mapping.light.getName()
                    << ": " << e.GetDescription();
-      } catch (std::runtime_error e) {
+      } catch (const std::runtime_error& e) {
         LOG(ERROR) << "error updating light " << mapping.light.getName() << ": "
                    << e.what();
       }
